@@ -6,7 +6,6 @@ import { CalendarDays, Download, FileHeart, Headphones, ShieldCheck } from "luci
 import { AcousticVisual } from "@/components/brand/acoustic-visual";
 import {
   getFindingCopy,
-  PLACEHOLDER_ANALYSIS_NOTICE,
   RISK_BAND_COPY,
 } from "@/lib/result-copy";
 import type { RiskBand, ScreeningView } from "@/types/screening";
@@ -72,13 +71,6 @@ export function ResultExperience({ initialScreening, preview = false }: ResultEx
         <h1>Your voice screening result.</h1>
         <p className={styles.date}><CalendarDays aria-hidden="true" size={20} /> {formatDate(screening.completed_at ?? screening.created_at)}</p>
       </header>
-
-      {screening.analyzer_kind === "dummy" ? (
-        <div className={styles.placeholder} role="note">
-          <strong>Placeholder analysis</strong>
-          <span>{PLACEHOLDER_ANALYSIS_NOTICE.replace("Placeholder analysis — ", "")}</span>
-        </div>
-      ) : null}
 
       <section className={styles.overview} aria-labelledby="result-title">
         <span className={styles.resultGlyph} aria-hidden="true"><i /><i /><i /><i /><i /></span>
