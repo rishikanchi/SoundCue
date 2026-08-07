@@ -1,0 +1,338 @@
+.recorder {
+  --recorder-ink: var(--ink);
+  --recorder-muted: var(--ink-soft);
+  --recorder-line: var(--border);
+  --recorder-paper: color-mix(in srgb, var(--surface) 74%, var(--canvas));
+  --recorder-wash: var(--canvas);
+  --recorder-accent: var(--teal-900);
+  --recorder-warning: var(--risk-some);
+  width: min(100%, 900px);
+  color: var(--recorder-ink);
+}
+
+.headingRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.title {
+  margin: 0;
+  font-family: inherit;
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+}
+
+.intro {
+  max-width: 690px;
+  margin: 1.25rem 0 2rem;
+  color: var(--recorder-muted);
+  font-size: 1.125rem;
+  line-height: 1.65;
+}
+
+.soundToggle {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--recorder-muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.soundToggle input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+  accent-color: var(--recorder-accent);
+}
+
+.statusCard {
+  overflow: hidden;
+  border: 1px solid var(--recorder-line);
+  border-radius: var(--radius-md);
+  background: var(--recorder-paper);
+  box-shadow: var(--shadow-soft);
+}
+
+.visualArea {
+  display: grid;
+  min-height: 238px;
+  place-items: center;
+  padding: 2rem clamp(1rem, 4vw, 3rem) 1.5rem;
+  background: linear-gradient(180deg, var(--recorder-wash), var(--recorder-paper));
+}
+
+.waveformFrame {
+  width: 100%;
+  padding: 1rem 0;
+}
+
+.waveform {
+  display: block;
+  width: 100%;
+  height: 152px;
+  overflow: visible;
+}
+
+.waveformBaseline {
+  stroke: var(--recorder-line);
+  stroke-width: 1;
+}
+
+.waveformBar {
+  fill: var(--recorder-accent);
+  opacity: 0.76;
+  transition: height 160ms ease, y 160ms ease, opacity 300ms ease;
+}
+
+.waveformFrame[data-active] .waveformBar {
+  opacity: 0.95;
+}
+
+.countdown {
+  display: grid;
+  width: 7rem;
+  height: 7rem;
+  place-items: center;
+  border: 1px solid var(--recorder-line);
+  border-radius: 50%;
+  background: rgb(255 253 248 / 80%);
+  color: var(--recorder-accent);
+  font-size: 3.5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  animation: softBreathe 850ms ease-in-out infinite;
+}
+
+.statusLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.35rem clamp(1.25rem, 4vw, 3rem) 0.9rem;
+}
+
+.statusLine strong,
+.statusDetail {
+  display: block;
+}
+
+.statusLine strong {
+  font-size: 1.08rem;
+  font-weight: 650;
+}
+
+.statusDetail {
+  margin-top: 0.25rem;
+  color: var(--recorder-muted);
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
+.recordingIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--recorder-accent);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.recordingIndicator::before {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+  animation: softBreathe 1.8s ease-in-out infinite;
+}
+
+.progressTrack {
+  position: relative;
+  height: 4px;
+  margin: 0.5rem clamp(1.25rem, 4vw, 3rem) 0;
+  overflow: visible;
+  border-radius: var(--radius-sm);
+  background: var(--recorder-line);
+}
+
+.progressFill {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--recorder-accent);
+  transform-origin: left center;
+  transition: transform 100ms linear;
+}
+
+.minimumMarker,
+.targetMarker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 10px;
+  background: var(--recorder-ink);
+}
+
+.minimumMarker { left: 41.666%; }
+.targetMarker { left: 66.666%; }
+
+.review {
+  padding: 0.75rem clamp(1.25rem, 4vw, 3rem) 0;
+}
+
+.audio {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+}
+
+.qualityNotice,
+.qualityOkay,
+.saveError {
+  margin: 1rem 0 0;
+  border-radius: 0.75rem;
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.qualityNotice {
+  border-left: 3px solid var(--recorder-warning);
+  padding: 0.9rem 1rem;
+  background: rgb(166 99 59 / 9%);
+}
+
+.qualityNotice ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.qualityNotice li + li { margin-top: 0.4rem; }
+
+.qualityOkay {
+  color: var(--recorder-muted);
+}
+
+.saveError {
+  margin-right: clamp(1.25rem, 4vw, 3rem);
+  margin-left: clamp(1.25rem, 4vw, 3rem);
+  color: var(--recorder-warning);
+}
+
+.actions {
+  display: flex;
+  min-height: 92px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem clamp(1.25rem, 4vw, 3rem) 0.6rem;
+}
+
+.primaryButton,
+.secondaryButton,
+.stopButton {
+  min-height: 48px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.7rem 1.4rem;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, opacity 180ms ease;
+}
+
+.primaryButton,
+.stopButton {
+  background: var(--recorder-accent);
+  color: #fffdf8;
+}
+
+.secondaryButton {
+  border-color: var(--recorder-line);
+  background: transparent;
+  color: var(--recorder-ink);
+}
+
+.primaryButton:hover:not(:disabled),
+.stopButton:hover:not(:disabled) { background: var(--recorder-ink); }
+
+.secondaryButton:hover:not(:disabled) { border-color: var(--recorder-accent); }
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.stopButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.stopButton:focus-visible,
+.soundToggle input:focus-visible,
+.audio:focus-visible {
+  outline: 3px solid var(--recorder-warning);
+  outline-offset: 3px;
+}
+
+.minimumNote {
+  margin: 0;
+  padding: 0.2rem 1rem 1.35rem;
+  color: var(--recorder-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.privacyNote {
+  margin: 1rem 0 0;
+  color: var(--recorder-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes softBreathe {
+  0%, 100% { opacity: 0.65; transform: scale(0.98); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 640px) {
+  .headingRow { display: block; }
+  .soundToggle { margin-top: 1rem; }
+  .visualArea { min-height: 190px; }
+  .waveform { height: 120px; }
+  .statusLine { align-items: flex-start; }
+  .recordingIndicator { font-size: 0; }
+  .actions { flex-direction: column-reverse; }
+  .primaryButton,
+  .secondaryButton,
+  .stopButton { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .countdown,
+  .recordingIndicator::before { animation: none; }
+  .waveformBar,
+  .progressFill,
+  .primaryButton,
+  .secondaryButton,
+  .stopButton { transition: none; }
+}
