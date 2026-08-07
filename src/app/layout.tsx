@@ -23,12 +23,21 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
+  const isHostedPlaceholderDemo =
+    process.env.SOUNDCUE_ALLOW_HOSTED_DUMMY === "true";
+
   return (
     <html lang="en" className={sourceSans.variable} data-scroll-behavior="smooth">
       <body>
         <a className="skip-link" href="#main-content">
           Skip to main content
         </a>
+        {isHostedPlaceholderDemo ? (
+          <div className="hosted-demo-notice" role="status">
+            Hosted product demo — results use placeholder analysis that has not
+            been clinically validated and must not guide medical decisions.
+          </div>
+        ) : null}
         {children}
       </body>
     </html>

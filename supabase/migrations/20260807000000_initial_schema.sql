@@ -296,7 +296,7 @@ grant select, insert, update, delete on table public.screenings to service_role;
 revoke all on function public.is_valid_screening_findings(jsonb) from public;
 revoke all on function public.set_updated_at() from public;
 revoke all on function public.prevent_consent_event_update() from public;
-revoke all on function public.handle_new_user() from public;
+revoke all on function public.handle_new_user() from public, anon, authenticated;
 
 grant execute on function public.is_valid_screening_findings(jsonb) to service_role;
 
