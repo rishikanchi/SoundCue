@@ -14,6 +14,8 @@ import type { AuthFormState } from "@/lib/auth/schemas";
 import styles from "./auth.module.css";
 
 const initialState: AuthFormState = {};
+const googleAuthEnabled =
+  process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
 
 function FieldError({ messages }: { messages?: string[] }) {
   return messages?.length ? (
@@ -75,8 +77,12 @@ export function SignUpForm() {
           {pending ? "Creating account…" : "Create account"}
         </button>
       </form>
-      <SocialDivider />
-      <GoogleButton />
+      {googleAuthEnabled ? (
+        <>
+          <SocialDivider />
+          <GoogleButton />
+        </>
+      ) : null}
       <p className={styles.switchPrompt}>
         Already have an account? <Link href="/auth/sign-in">Sign in.</Link>
       </p>
@@ -104,8 +110,12 @@ export function SignInForm() {
           {pending ? "Signing in…" : "Sign in"}
         </button>
       </form>
-      <SocialDivider />
-      <GoogleButton />
+      {googleAuthEnabled ? (
+        <>
+          <SocialDivider />
+          <GoogleButton />
+        </>
+      ) : null}
       <p className={styles.switchPrompt}>
         New to SoundCue? <Link href="/auth/sign-up">Create account.</Link>
       </p>

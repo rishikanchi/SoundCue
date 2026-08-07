@@ -4,7 +4,7 @@ SoundCue is a desktop-first voice screening aid for noticing acoustic patterns t
 
 This repository contains the complete public-beta product surface: versioned consent, Supabase authentication, browser recording and quality checks, private audio retention, an analyzer adapter, results, PDF summaries, history, playback, deletion, and legal/accessibility pages.
 
-The included `DummySignalAnalyzer` is deterministic development infrastructure only. It is not clinically validated. The server refuses to run it when `VERCEL_ENV=production`; a validated `Analyzer` implementation and approved model version must replace it before any public health result is served.
+The included `DummySignalAnalyzer` is deterministic development infrastructure only. It is not clinically validated. The server refuses to run it when `VERCEL_ENV=production` unless `SOUNDCUE_ALLOW_HOSTED_DUMMY=true` is deliberately set for a clearly labeled hosted product demo. A validated `Analyzer` implementation and approved model version must replace it before any public health result is served.
 
 ## Stack
 
@@ -31,6 +31,8 @@ npm run dev
 ```
 
 The app runs at `http://localhost:3000`; Supabase Studio runs at `http://127.0.0.1:54323`, and local email is visible at `http://127.0.0.1:54324`.
+
+Google OAuth is rendered only when `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` and the corresponding Supabase provider credentials are configured. Hosted demos without those third-party credentials use the complete email/password flow without exposing an inert OAuth control.
 
 ## Synthetic demo
 

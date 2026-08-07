@@ -9,8 +9,10 @@ export function getAnalyzer(): Analyzer {
   const isProduction = process.env.VERCEL_ENV
     ? process.env.VERCEL_ENV === "production"
     : process.env.NODE_ENV === "production";
+  const hostedDummyExplicitlyAllowed =
+    process.env.SOUNDCUE_ALLOW_HOSTED_DUMMY === "true";
 
-  if (kind === "dummy" && isProduction) {
+  if (kind === "dummy" && isProduction && !hostedDummyExplicitlyAllowed) {
     throw new Error("DUMMY_ANALYZER_DISABLED_IN_PRODUCTION");
   }
   if (kind !== "dummy") {
