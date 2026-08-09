@@ -4,7 +4,8 @@ export type AudioQualityIssueCode =
   | "too_short"
   | "silence"
   | "low_input"
-  | "clipping";
+  | "clipping"
+  | "discontinuity";
 
 export interface AudioFeatures {
   version: typeof AUDIO_FEATURE_VERSION;

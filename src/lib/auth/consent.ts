@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export const CONSENT_COOKIE = "soundcue-pending-consent";
 export const CONSENT_VERSION =
-  process.env.CONSENT_DOCUMENT_VERSION ?? "2026-08-01";
+  process.env.CONSENT_DOCUMENT_VERSION ?? "2026-08-08-research-v1";
 
 function getSecret() {
   const secret =

@@ -11,7 +11,7 @@ type AnalysisExperienceProps = {
   preview?: boolean;
 };
 
-type Stage = "quality" | "steadiness" | "patterns" | "complete" | "error";
+type Stage = "quality" | "representations" | "combine" | "complete" | "error";
 
 const wait = (milliseconds: number) =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -41,6 +41,11 @@ function previewScreening(features: AcousticFeatures): ScreeningView {
     quality: { passed: true, reasons: [] },
     analyzer_kind: "dummy",
     analyzer_version: "dummy-signal-v1",
+    age_years: null,
+    preprocessing_version: null,
+    band_policy_version: null,
+    model_artifact_sha256: null,
+    observations: null,
     band,
     findings: [
       { code: "voice_steadiness", level: level(features.jitter * 18) },
@@ -84,9 +89,9 @@ export function AnalysisExperience({ screeningId, preview = false }: AnalysisExp
     async function analyze() {
       try {
         await wait(560);
-        setStage("steadiness");
+        setStage("representations");
         await wait(760);
-        setStage("patterns");
+        setStage("combine");
 
         let screening: ScreeningView;
         if (preview) {
@@ -131,8 +136,8 @@ export function AnalysisExperience({ screeningId, preview = false }: AnalysisExp
   return (
     <div className={styles.experience}>
       <header>
-        <h1>Looking at your voice patterns.</h1>
-        <p>This usually takes a few moments.</p>
+        <h1>Analyzing your Parkinson’s voice screening.</h1>
+        <p>SoundCue is comparing voice patterns with its research reference. This usually takes a few moments.</p>
       </header>
       <div className={styles.transformation}>
         <SignalSource samples={waveform} />
@@ -144,15 +149,15 @@ export function AnalysisExperience({ screeningId, preview = false }: AnalysisExp
             label="Checking recording quality"
           />
           <StageRow
-            active={stage === "steadiness"}
-            complete={["patterns", "complete"].includes(stage)}
-            label="Measuring voice steadiness"
+            active={stage === "representations"}
+            complete={["combine", "complete"].includes(stage)}
+            label="Building acoustic representations"
             variant="steady"
           />
           <StageRow
-            active={stage === "patterns"}
+            active={stage === "combine"}
             complete={stage === "complete"}
-            label="Reviewing pitch and breath patterns"
+            label="Combining three analysis views with age"
             variant="dotted"
           />
         </ol>
@@ -175,8 +180,8 @@ export function AnalysisExperience({ screeningId, preview = false }: AnalysisExp
       </button>
       <span className="sr-only" aria-live="polite">
         {stage === "quality" ? "Checking recording quality." : null}
-        {stage === "steadiness" ? "Measuring voice steadiness." : null}
-        {stage === "patterns" ? "Reviewing pitch and breath patterns." : null}
+        {stage === "representations" ? "Building acoustic representations." : null}
+        {stage === "combine" ? "Combining three analysis views with age." : null}
         {stage === "complete" ? "Analysis complete. Opening your result." : null}
       </span>
     </div>

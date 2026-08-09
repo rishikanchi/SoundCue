@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ShieldPlus } from "lucide-react";
-import { AcousticVisual } from "@/components/brand/acoustic-visual";
 import { SoundCueLogo } from "@/components/brand/logo";
 import { SiteFooter } from "@/components/layout/site-footer";
 import styles from "./auth.module.css";
@@ -37,7 +36,6 @@ export function AuthScreen({
           {children}
         </section>
         <aside className={styles.visualRegion} aria-label="Privacy note">
-          <AcousticVisual variant="quiet" />
           <div className={styles.privacyStatement}>
             <span aria-hidden="true">
               <ShieldPlus size={27} strokeWidth={1.5} />

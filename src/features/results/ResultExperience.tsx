@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, Download, FileHeart, Headphones, ShieldCheck } from "lucide-react";
+import {
+  CalendarDays,
+  Download,
+  FileHeart,
+  FileText,
+  Headphones,
+  ShieldCheck,
+} from "lucide-react";
 import { AcousticVisual } from "@/components/brand/acoustic-visual";
 import {
+  RESEARCH_ANALYSIS_COPY,
   getFindingCopy,
+  getResearchResultObservations,
   RISK_BAND_COPY,
+  SCREENING_DISCLAIMER,
+  type ResearchObservation,
 } from "@/lib/result-copy";
 import type { RiskBand, ScreeningView } from "@/types/screening";
 import styles from "./result.module.css";
@@ -58,17 +69,35 @@ export function ResultExperience({ initialScreening, preview = false }: ResultEx
   }
 
   const copy = RISK_BAND_COPY[screening.band];
+  const isResearch = String(screening.analyzer_kind) === "research";
+  const researchFields = screening as ScreeningView & {
+    age_years?: number | null;
+    observations?: ResearchObservation[] | null;
+  };
+  const researchObservations = isResearch
+    ? getResearchResultObservations(
+        researchFields.observations,
+        screening.quality,
+        screening.duration_seconds,
+      )
+    : [];
   const findingHeadline =
     screening.band === "fewer"
       ? "Fewer vocal changes detected."
       : screening.band === "some"
         ? "Some vocal changes detected."
         : "More vocal changes detected.";
+  const guidanceHeadline =
+    screening.band === "more"
+      ? "Speak with a clinician about this result."
+      : screening.band === "some"
+        ? "Consider speaking with a clinician."
+        : "Speak with a clinician if you have symptoms or concerns.";
 
   return (
     <article className={`${styles.result} page-container`}>
       <header className={styles.heading}>
-        <h1>Your voice screening result.</h1>
+        <h1>Your Parkinson’s voice screening result.</h1>
         <p className={styles.date}><CalendarDays aria-hidden="true" size={20} /> {formatDate(screening.completed_at ?? screening.created_at)}</p>
       </header>
 
@@ -76,7 +105,13 @@ export function ResultExperience({ initialScreening, preview = false }: ResultEx
         <span className={styles.resultGlyph} aria-hidden="true"><i /><i /><i /><i /><i /></span>
         <div>
           <h2 id="result-title">{findingHeadline}</h2>
-          <p>{copy.summary} This result cannot tell you whether you have Parkinson&apos;s disease.</p>
+          <p>
+            {copy.summary}{" "}
+            {isResearch
+              ? RESEARCH_ANALYSIS_COPY.referenceSummary
+              : "This category comes from SoundCue’s earlier development analyzer."}{" "}
+            This screening cannot diagnose or rule out Parkinson’s disease.
+          </p>
         </div>
         <AcousticVisual className={styles.resultSignal} variant="compact" />
       </section>
@@ -104,41 +139,77 @@ export function ResultExperience({ initialScreening, preview = false }: ResultEx
         <section className={styles.findings} aria-labelledby="findings-title">
           <h2 id="findings-title">What we noticed</h2>
           <div className={styles.findingList}>
-            {(screening.findings ?? []).map((finding) => {
-              const findingCopy = getFindingCopy(finding.code, finding.level);
-              return (
-                <div className={styles.finding} key={finding.code}>
+            {isResearch
+              ? researchObservations.map((observation) => (
+                <div className={styles.finding} key={observation.code}>
                   <span className={styles.findingMark} aria-hidden="true" />
                   <div>
-                    <h3>{findingCopy.title}</h3>
-                    <p>{findingCopy.description}</p>
+                    <div className={styles.findingHeading}>
+                      <h3>{observation.title}</h3>
+                      <span>{observation.value}</span>
+                    </div>
+                    <p>{observation.description}</p>
                   </div>
                 </div>
-              );
-            })}
+              ))
+              : (screening.findings ?? []).map((finding) => {
+                  const findingCopy = getFindingCopy(finding.code, finding.level);
+                  return (
+                    <div className={styles.finding} key={finding.code}>
+                      <span className={styles.findingMark} aria-hidden="true" />
+                      <div>
+                        <h3>{findingCopy.title}</h3>
+                        <p>{findingCopy.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
           </div>
+          {isResearch ? <p className={styles.contextNote}>{RESEARCH_ANALYSIS_COPY.contextNote}</p> : null}
         </section>
 
         <section className={styles.guidance} aria-labelledby="guidance-title">
           <div className={styles.guidanceIcon}><FileHeart aria-hidden="true" size={31} strokeWidth={1.5} /></div>
           <div>
-            <h2 id="guidance-title">Share this result with a healthcare provider.</h2>
+            <h2 id="guidance-title">{guidanceHeadline}</h2>
             <p>{copy.recommendation}</p>
             <div className={styles.actions}>
               {preview ? (
                 <span className="button button--secondary" aria-disabled="true" title="Sign in to download summaries">
                   <Download aria-hidden="true" size={20} /> Download summary
                 </span>
-              ) : (
-                <a className="button button--primary" href={`/api/screenings/${screening.id}/pdf`}>
-                  <Download aria-hidden="true" size={20} /> Download clinician summary
-                </a>
-              )}
+              ) : isResearch ? (
+                <>
+                  <a className="button button--primary" href={`/api/screenings/${screening.id}/pdf`}>
+                    <Download aria-hidden="true" size={20} /> Download clinician summary
+                  </a>
+                  <Link className="button button--secondary" href={`/screenings/${screening.id}/report`}>
+                    <FileText aria-hidden="true" size={20} /> View accessible report
+                  </Link>
+                </>
+              ) : null}
               <Link className="button button--secondary" href="/screenings/new">Record again</Link>
             </div>
+            <p className={styles.disclaimer}><ShieldCheck aria-hidden="true" size={19} /> {SCREENING_DISCLAIMER}</p>
           </div>
         </section>
       </div>
+
+      {isResearch ? (
+        <section className={styles.analysisDetails} aria-labelledby="analysis-details-title">
+          <div>
+            <h2 id="analysis-details-title">How this Parkinson’s voice analysis works</h2>
+            <p>{RESEARCH_ANALYSIS_COPY.howItWorks}</p>
+          </div>
+          <div>
+            <h3>Development evidence</h3>
+            <p>{RESEARCH_ANALYSIS_COPY.evidenceLimitations}</p>
+            {typeof researchFields.age_years === "number" ? (
+              <p className={styles.analysisMeta}>Age entered for this screening: <strong>{researchFields.age_years}</strong></p>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       {screening.hasRecording && !preview ? (
         <section className={styles.playback} aria-labelledby="playback-title">
@@ -150,11 +221,6 @@ export function ResultExperience({ initialScreening, preview = false }: ResultEx
           <audio controls preload="none" src={`/api/screenings/${screening.id}/audio`} aria-label="Play the recording used for this screening" />
         </section>
       ) : null}
-
-      <aside className={styles.reminder}>
-        <ShieldCheck aria-hidden="true" size={24} />
-        <p><strong>This result is not a diagnosis.</strong> It cannot confirm or rule out Parkinson&apos;s disease. A clinician can interpret voice changes alongside your symptoms and health history.</p>
-      </aside>
     </article>
   );
 }

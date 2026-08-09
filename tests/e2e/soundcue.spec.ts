@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 test("landing, legal content, and responsive accessibility", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "A clearer signal from your voice." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "A clearer signal for Parkinson’s voice screening." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Begin screening" })).toBeDisabled();
   await page.getByRole("checkbox").check();
   await expect(page.getByRole("button", { name: "Begin screening" })).toBeEnabled();
@@ -12,7 +12,7 @@ test("landing, legal content, and responsive accessibility", async ({ page }) =>
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
-  await expect(page.getByRole("heading", { name: "A clearer signal from your voice." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "A clearer signal for Parkinson’s voice screening." })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
   await page.goto("/privacy");
@@ -35,6 +35,7 @@ test("consent through recording, analysis, result, history, PDF, and deletion", 
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/screenings\/new/, { timeout: 15_000 });
 
+  await page.getByLabel("Your age today").fill("64");
   await page.getByRole("button", { name: "Start recording" }).click();
   await expect(page.getByText("Keep holding the sound")).toBeVisible({ timeout: 8_000 });
   await expect(page.getByText("You can stop when ready")).toBeVisible({ timeout: 9_000 });
@@ -43,24 +44,34 @@ test("consent through recording, analysis, result, history, PDF, and deletion", 
   await expect(page.getByText(/enough clear audio/)).toBeVisible();
   await page.getByRole("button", { name: "Use this recording" }).click();
 
-  await expect(page.getByRole("heading", { name: "Looking at your voice patterns." })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Analyzing your Parkinson’s voice screening." })).toBeVisible({ timeout: 15_000 });
   await expect(page).toHaveURL(/\/screenings\/[0-9a-f-]+$/, { timeout: 20_000 });
   await expect(page.getByRole("heading", { name: /vocal changes detected\./i })).toBeVisible();
-  await expect(page.getByText("Placeholder analysis", { exact: true })).toBeVisible();
-  await expect(page.getByText("This result is not a diagnosis.")).toBeVisible();
+  await expect(page.getByText("Placeholder analysis", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("This result is not a diagnosis.")).toHaveCount(0);
+  await expect(page.getByText(/SoundCue looks for voice patterns associated with Parkinson’s disease/)).toBeVisible();
   await expect(page.locator("audio")).toHaveCount(1);
 
-  const download = page.waitForEvent("download");
-  await page.getByRole("link", { name: "Download clinician summary" }).click();
-  expect((await download).suggestedFilename()).toMatch(/^soundcue-summary-.*\.pdf$/);
+  const clinicianSummary = page.getByRole("link", { name: "Download clinician summary" });
+  if (process.env.ANALYZER_MODE === "research") {
+    const download = page.waitForEvent("download");
+    await clinicianSummary.click();
+    expect((await download).suggestedFilename()).toMatch(/^soundcue-summary-.*\.pdf$/);
+  } else {
+    await expect(clinicianSummary).toHaveCount(0);
+  }
 
   await page.getByRole("link", { name: "Your history" }).click();
-  await expect(page.getByRole("heading", { name: "Your screening history." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your Parkinson’s voice screening history." })).toBeVisible();
   await expect(page.getByRole("row")).toHaveCount(2);
+  if (process.env.ANALYZER_MODE === "research") {
+    await expect(page.getByRole("link", { name: "Download clinician trend report" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Share report" })).toBeVisible();
+  }
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: /Delete screening from/ }).click();
   await expect(page.getByText("Screening deleted.")).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByText("Your history will appear here.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your Parkinson’s voice screening history will appear here." })).toBeVisible();
 
   await page.getByRole("link", { name: /e2e-/ }).click();
   await expect(page.getByRole("heading", { name: "Settings and privacy." })).toBeVisible();

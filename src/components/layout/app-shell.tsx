@@ -14,7 +14,6 @@ export function AppShell({
   children,
   active,
   displayName,
-  placeholder = false,
   quietHeader = false,
 }: AppShellProps) {
   return (
@@ -28,7 +27,7 @@ export function AppShell({
       <main id="main-content" className="app-shell__main">
         {children}
       </main>
-      <DisclaimerBar placeholder={placeholder} />
+      <DisclaimerBar />
     </div>
   );
 }

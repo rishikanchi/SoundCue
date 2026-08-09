@@ -21,7 +21,7 @@ export default async function AnalyzingPage({
       <main id="main-content" style={{ flex: 1 }}>
         <AnalysisExperience preview={preview} screeningId={screeningId} />
       </main>
-      <DisclaimerBar placeholder={preview} />
+      <DisclaimerBar />
     </div>
   );
 }

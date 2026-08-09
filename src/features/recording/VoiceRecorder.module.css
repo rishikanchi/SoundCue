@@ -182,8 +182,8 @@
   background: var(--recorder-ink);
 }
 
-.minimumMarker { left: 41.666%; }
-.targetMarker { left: 66.666%; }
+.minimumMarker { left: 71.429%; }
+.targetMarker { left: 85.714%; }
 
 .review {
   padding: 0.75rem clamp(1.25rem, 4vw, 3rem) 0;

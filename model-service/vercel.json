@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "uv run --isolated --no-project --python 3.12 --with huggingface-hub==0.36.0 python scripts/download_encoders.py",
+  "fluid": true,
+  "rewrites": [
+    { "source": "/health", "destination": "/api/index" },
+    { "source": "/v1/analyze", "destination": "/api/index" }
+  ],
+  "functions": {
+    "api/index.py": {
+      "excludeFiles": "{tests/**,requirements-dev.txt,README.md,**/__pycache__/**}",
+      "includeFiles": "{artifacts/**,model_manifest.json,.model-cache/**}",
+      "maxDuration": 120
+    }
+  }
+}

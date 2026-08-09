@@ -85,7 +85,7 @@ export function VoiceRecorder({
       {showIntro ? (
         <p className={styles.intro}>
           Take a comfortable breath, then hold one clear “ahhh” at your usual speaking volume.
-          Aim for about 8 seconds. You can listen before choosing to continue.
+          Aim for about 6 seconds. You can listen before choosing to continue.
         </p>
       ) : null}
 
@@ -140,7 +140,7 @@ export function VoiceRecorder({
           <div className={styles.progressTrack} aria-hidden="true">
             <div className={styles.progressFill} style={{ transform: `scaleX(${recordingProgress})` }} />
             <span className={styles.minimumMarker} title="Five-second minimum" />
-            <span className={styles.targetMarker} title="Eight-second target" />
+            <span className={styles.targetMarker} title="Six-second target" />
           </div>
         ) : null}
 
@@ -162,7 +162,7 @@ export function VoiceRecorder({
               </div>
             ) : (
               <p className={styles.qualityOkay}>
-                The microphone received enough clear audio for the placeholder analysis.
+                The microphone received enough clear audio for research analysis.
               </p>
             )}
           </div>
@@ -215,7 +215,7 @@ export function VoiceRecorder({
         </div>
 
         <p className={styles.minimumNote} id="recording-minimum">
-          Minimum 5 seconds · Target 8 seconds · Stops automatically at 12 seconds
+          Minimum 5 seconds · Target 6 seconds · Stops automatically at 7 seconds
         </p>
       </div>
 

@@ -31,8 +31,9 @@ export async function listCompletedScreenings(userId: string) {
     .order("id", { ascending: true });
 
   if (error) return [];
+  const bandPosition = { fewer: 0.18, some: 0.55, more: 0.84 } as const;
   return (data as ScreeningRecord[]).map((record) => ({
     view: toScreeningView(record),
-    spectrumPosition: Math.max(0, Math.min(1, record.score ?? 0.5)),
+    spectrumPosition: record.band ? bandPosition[record.band] : 0.55,
   }));
 }

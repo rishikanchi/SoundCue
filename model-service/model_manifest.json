@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "model": {
+    "kind": "research",
+    "version": "soundcue-research-3c-age-v1.0.0",
+    "artifact": {
+      "path": "artifacts/research_ensemble.joblib",
+      "sha256": "43a3a7c759ed49f1cea98fc331a1e20157656fb4407ea3804dd6171d5f5a4f02",
+      "sourceArtifactSha256": "7610af05ece276bf8a59eb6bae96f162074f1c1d6f54d63591cf36aaaff41c7f"
+    },
+    "developmentAssets": {
+      "participantTableSha256": "102592d85a3b48d41c72fd1bd6d4f4c7bd9e3987369c63cd342fbce3ae48c848",
+      "astFeatureArchiveSha256": "341999fd3e41077d6a8beb9cdb2f68b7af6fb4f7483679c0a97ffb0fa2fdf0aa",
+      "canonicalWavlmArchiveSha256": "e13d8e371508ed6046d52082cefb27d310e23d7d2ea9fd230f861121beaec1f5"
+    },
+    "components": [
+      {
+        "code": "ast_layer_3",
+        "name": "AST layer 3 + age",
+        "weight": 0.4
+      },
+      {
+        "code": "ast_layer_6",
+        "name": "AST layer 6 + age",
+        "weight": 0.4
+      },
+      {
+        "code": "wavlm_layer_1",
+        "name": "WavLM layer 1 + age",
+        "weight": 0.2
+      }
+    ],
+    "inputs": {
+      "audio": true,
+      "ageYears": true,
+      "sex": false
+    },
+    "ageRangeYears": {
+      "minimum": 18,
+      "maximum": 85
+    },
+    "encoderRevisions": {
+      "ast": {
+        "modelId": "MIT/ast-finetuned-audioset-10-10-0.4593",
+        "revision": "f826b80d28226b62986cc218e5cec390b1096902"
+      },
+      "wavlm": {
+        "modelId": "microsoft/wavlm-base-plus",
+        "revision": "4c66d4806a428f2e922ccfa1a962776e232d487b"
+      }
+    }
+  },
+  "preprocessing": {
+    "version": "audio-8k-to-16k-v1",
+    "decode": {
+      "channels": 1,
+      "sampleRateHz": 8000,
+      "sampleFormat": "float32"
+    },
+    "encoderInput": {
+      "sampleRateHz": 16000,
+      "resampler": "librosa-0.11.0-default-soxr_hq"
+    },
+    "astFeatures": {
+      "layer3": "distillation token (768)",
+      "layer6": "token mean, token standard deviation, CLS token, distillation token (3072)"
+    },
+    "wavlmFeatures": {
+      "layer1": "valid-frame mean (768)",
+      "padding": "Per-recording fixed 120000-sample (7.5 second) encoder input",
+      "archiveSha256": "e13d8e371508ed6046d52082cefb27d310e23d7d2ea9fd230f861121beaec1f5"
+    },
+    "parity": {
+      "requiredParticipants": 81,
+      "passed": true,
+      "status": "passed",
+      "suppliedWavlmArchive": {
+        "passed": false,
+        "maximumAbsoluteErrorObserved": 0.3133498430252075,
+        "reason": "Variable two-recording batch padding made a shorter recording depend on its batch partner."
+      },
+      "canonicalWavlm": {
+        "version": "wavlm-fixed-7.5s-padding-v1",
+        "archiveSha256": "e13d8e371508ed6046d52082cefb27d310e23d7d2ea9fd230f861121beaec1f5",
+        "passed": true,
+        "participantsValidated": 81,
+        "absoluteTolerance": 0.0001,
+        "maximumAbsoluteError": 4.9591064453125e-05,
+        "perComponentMaximumAbsoluteError": {
+          "ast_layer_3": 4.684925079345703e-05,
+          "ast_layer_6": 4.9591064453125e-05,
+          "wavlm_layer_1": 0.0
+        }
+      }
+    }
+  },
+  "bandPolicy": {
+    "version": "development-tertiles-v1",
+    "method": "Frozen tertiles of age-only three-component LOPO development scores",
+    "thresholds": [
+      0.35761316872427984,
+      0.6679012345679013
+    ],
+    "labels": [
+      "fewer",
+      "some",
+      "more"
+    ],
+    "developmentCounts": {
+      "fewer": 27,
+      "some": 27,
+      "more": 27
+    },
+    "isProbability": false
+  },
+  "observationReferences": {
+    "pitchSemitoneIqr": {
+      "thresholds": [
+        0.20000000000000226,
+        0.3999999999999986
+      ],
+      "referenceParticipants": 81
+    },
+    "loudnessVariationDb": {
+      "thresholds": [
+        1.88215456707121,
+        3.7644281688662637
+      ],
+      "referenceParticipants": 81
+    },
+    "voicedCoverage": {
+      "thresholds": [
+        0.9742404716408183,
+        0.9945645007691745
+      ],
+      "referenceParticipants": 81
+    },
+    "provenance": "Frozen tertiles from deterministic measurements of the 81 development recordings; contextual, not causal model explanations."
+  },
+  "validation": {
+    "evidenceKind": "preliminary_internal_development",
+    "developmentCohort": {
+      "participants": 81,
+      "hc": 41,
+      "pd": 40,
+      "ageMinimum": 18.0,
+      "ageMaximum": 85.31,
+      "hcMedianAge": 45.0,
+      "pdMedianAge": 67.89500000000001
+    },
+    "primary": {
+      "method": "Leave-one-participant-out with fold-local five-fold empirical-CDF calibration",
+      "rocAuc": 0.9804878048780488
+    },
+    "bootstrap95": {
+      "method": "Class-stratified participant bootstrap, 20000 draws",
+      "low": 0.9536585365853658,
+      "median": 0.9823170731707317,
+      "high": 0.9975609756097561
+    },
+    "thresholdAtPoint5": {
+      "scoreCutPoint": 0.5,
+      "accuracy": 0.9135802469135802,
+      "sensitivity": 0.9,
+      "specificity": 0.926829268292683,
+      "trueNegative": 38,
+      "falsePositive": 3,
+      "falseNegative": 4,
+      "truePositive": 36
+    },
+    "repeatedFiveFold": {
+      "repeats": 20,
+      "meanRocAuc": 0.9416310975609756,
+      "standardDeviation": 0.013510767994437772,
+      "minimum": 0.9189024390243903,
+      "maximum": 0.9692073170731708,
+      "values": [
+        0.9332317073170732,
+        0.9597560975609756,
+        0.9432926829268293,
+        0.9216463414634146,
+        0.9554878048780487,
+        0.9411585365853659,
+        0.9378048780487804,
+        0.9542682926829269,
+        0.9530487804878048,
+        0.9292682926829269,
+        0.9341463414634146,
+        0.9692073170731708,
+        0.9445121951219512,
+        0.9246951219512195,
+        0.9323170731707318,
+        0.9320121951219513,
+        0.9591463414634147,
+        0.9503048780487805,
+        0.9189024390243903,
+        0.9384146341463415
+      ]
+    },
+    "ablations": {
+      "ageOnlyRocAuc": 0.863719512195122,
+      "audioOnlyThreeComponentRocAuc": 0.8948170731707317,
+      "componentRocAuc": {
+        "ast_layer_3": 0.975609756097561,
+        "ast_layer_6": 0.938719512195122,
+        "wavlm_layer_1": 0.9048780487804878
+      }
+    },
+    "ageSubgroups": [
+      {
+        "label": "18-59",
+        "participants": 43,
+        "hc": 34,
+        "pd": 9,
+        "auc": 0.9934640522875817
+      },
+      {
+        "label": "60-69",
+        "participants": 18,
+        "hc": 3,
+        "pd": 15,
+        "auc": 0.9777777777777779
+      },
+      {
+        "label": "70+",
+        "participants": 20,
+        "hc": 4,
+        "pd": 16,
+        "auc": 0.921875
+      }
+    ],
+    "exactSexAgeWithinFiveYearsMatchedSubset": {
+      "participants": 28,
+      "auc": 0.9387755102040816
+    },
+    "limitations": [
+      "No external, prospective, site, microphone, or recording-session validation.",
+      "Development representation and hyperparameter choices were informed by the same 81-participant dataset.",
+      "The development cohorts are substantially age imbalanced; the model explicitly uses age.",
+      "Development recordings were 1.516 to 7.208 seconds, while production accepts 5.0 to 7.5 seconds.",
+      "Technical observations provide context and are not causal explanations of the encoder-based result.",
+      "WavLM development features were re-extracted with fixed per-recording padding because the supplied archive depended on variable batch partners.",
+      "This research model must not be used to diagnose Parkinson's disease or guide treatment."
+    ]
+  },
+  "quality": {
+    "minDurationSeconds": 5.0,
+    "maxDurationSeconds": 7.5,
+    "minRmsDbfs": -40.0,
+    "minVoicedCoverage": 0.65,
+    "maxClippingRatio": 0.01,
+    "maxDiscontinuityRatio": 0.005,
+    "maxAudioBytes": 4194304
+  },
+  "release": {
+    "status": "research_only",
+    "independentlyValidated": false,
+    "diagnosticUse": false,
+    "productionFallbackToDummyAllowed": false
+  }
+}
