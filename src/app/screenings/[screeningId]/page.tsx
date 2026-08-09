@@ -6,7 +6,7 @@ import { getDisplayName, requireUser } from "@/lib/auth/current-user";
 import { getScreeningForUser } from "@/lib/screenings/data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
-export const metadata: Metadata = { title: "Your screening result" };
+export const metadata: Metadata = { title: "Your Parkinson’s voice screening result" };
 
 export default async function ResultPage({
   params,

@@ -1,0 +1,68 @@
+.flow {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.ageCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem 2rem;
+  padding: 1.15rem 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 82%, var(--canvas));
+}
+
+.ageCard label {
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.ageCard p {
+  margin: 0.25rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.96rem;
+  line-height: 1.45;
+}
+
+.ageField {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--ink-soft);
+}
+
+.ageField input {
+  width: 6.25rem;
+  min-height: 48px;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ageField input[aria-invalid="true"] {
+  border-color: var(--risk-some);
+}
+
+.ageStatus {
+  grid-column: 1 / -1;
+  margin-top: 0 !important;
+  font-size: 0.9rem !important;
+}
+
+@media (max-width: 640px) {
+  .ageCard {
+    grid-template-columns: 1fr;
+  }
+
+  .ageStatus {
+    grid-column: auto;
+  }
+}

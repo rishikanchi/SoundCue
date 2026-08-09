@@ -2,15 +2,17 @@
 
 SoundCue is a desktop-first voice screening aid for noticing acoustic patterns that may be associated with vocal impairment. It is not a diagnostic tool and cannot confirm or rule out Parkinson's disease.
 
-This repository contains the complete public-beta product surface: versioned consent, Supabase authentication, browser recording and quality checks, private audio retention, an analyzer adapter, results, PDF summaries, history, playback, deletion, and legal/accessibility pages.
+This repository contains the complete research-screening product surface: versioned consent, Supabase authentication, browser recording and quality checks, private audio retention, protected inference, expanded results, accessible clinician reports, history, playback, deletion, and legal/accessibility pages.
 
-The included `DummySignalAnalyzer` is deterministic development infrastructure only. It is not clinically validated. The server refuses to run it when `VERCEL_ENV=production` unless `SOUNDCUE_ALLOW_HOSTED_DUMMY=true` is deliberately set for a clearly labeled hosted product demo. A validated `Analyzer` implementation and approved model version must replace it before any public health result is served.
+The deployed analyzer is a three-component age-plus-audio research model: AST layer 3 (40%), AST layer 6 (40%), and WavLM layer 1 (20%). It is not independently validated or diagnostic. Production fails closed unless `ANALYZER_MODE=research`; it never falls back to the retained local-only `DummySignalAnalyzer`. Do not claim the unavailable four-component model's 0.9872 result for this service.
 
 ## Stack
 
 - Next.js App Router, React, TypeScript, CSS modules
 - Supabase Auth, Postgres, Row Level Security, and private Storage
 - Web Audio and `MediaRecorder` for capture and acoustic feature extraction
+- A private Python 3.12 inference service with pinned AST and WavLM revisions
+- `@react-pdf/renderer` for selectable, vector-based clinician reports
 - Zod at API boundaries
 - Vitest, pgTAP, Playwright, and axe for verification
 
@@ -60,11 +62,11 @@ npm run supabase:reset
 npx supabase test db
 ```
 
-The Playwright suite uses `tests/fixtures/sustained-ah.wav` only as a browser microphone fixture. It covers consent, signup, retained recording upload, placeholder analysis, result, PDF, history, deletion, permanent account deletion, the synthetic demo account, responsive layout, and an axe scan.
+The Playwright suite uses `tests/fixtures/sustained-ah.wav` only as a browser microphone fixture. It covers consent, age entry, signup, retained recording upload, research analysis, expanded result, HTML/PDF report, history, deletion, permanent account deletion, the synthetic demo account, responsive layout, and an axe scan.
 
-## Analyzer replacement
+## Research inference
 
-The model boundary is `src/types/screening.ts`:
+The model boundary remains `src/types/screening.ts`:
 
 ```ts
 interface Analyzer {
@@ -72,14 +74,18 @@ interface Analyzer {
 }
 ```
 
-Implement a validated adapter, register it in `src/lib/analyzer/index.ts`, require its approved version through deployment configuration, and keep clinical thresholds and reviewed result wording inside the adapter/copy mapping—not in presentation components. The UI intentionally never exposes a probability or raw score.
+`ResearchModelAnalyzer` signs raw-audio requests to the separate `model-service/` project. Configure `SOUNDCUE_INFERENCE_URL`, a shared `SOUNDCUE_INFERENCE_HMAC_SECRET`, and the exact `SOUNDCUE_MODEL_ARTIFACT_SHA256`. The service verifies the bundled artifact before loading it, rejects stale/tampered/replayed requests, standardizes audio to the research acquisition bandwidth, and returns a versioned result. The UI never exposes an individual score, component score, or probability.
+
+The inference service has its own Python dependencies, tests, Vercel configuration, versioned manifest, and artifact builder. See `model-service/README.md` for local and deployment commands.
 
 ## Data and privacy behavior
 
 - `profiles`, `consent_events`, and `screenings` are protected by forced RLS.
 - Browser clients can read only their own rows, append current consent, and update only `sound_cues_enabled`.
 - Model-owned fields and screening lifecycle mutations are reserved for authenticated Route Handlers using the server-only service role after an ownership check.
-- Recordings live under `userId/screeningId/source.ext` in the private `recordings` bucket with a 10 MiB limit and an audio MIME allowlist.
+- Recordings live under `userId/screeningId/source.ext` in the private `recordings` bucket with a 4 MiB limit and a browser-audio MIME allowlist.
+- Age is collected as a whole number from 18 to 85 for every screening and is not copied into the account profile.
+- Research component outputs and technical measurements live in a service-role-only table. Browser roles receive only categorical bands and reviewed observation codes.
 - Audio and PDFs are streamed only through authenticated, `no-store` endpoints.
 - Screening deletion removes storage first; account deletion requires recent authentication and removes all retained storage before the Auth user.
 - Application code avoids logging email addresses, audio, features, results, storage paths, access tokens, or PDF contents.
@@ -88,11 +94,12 @@ Implement a validated adapter, register it in `src/lib/analyzer/index.ts`, requi
 
 Do not enable public signup or public screening results until all of the following are complete:
 
-1. Replace the dummy analyzer with the clinically validated implementation and approved version.
-2. Complete clinical, legal, privacy, security, and applicable regulatory review.
-3. Receive counsel approval for consent, Privacy, Terms, Accessibility, and retention/deletion copy.
-4. Configure production Supabase redirect URLs, Google OAuth, CAPTCHA, custom SMTP, rate limits, backup/retention controls, and a private US-region project.
-5. Configure Vercel/Supabase secrets and compliance offerings appropriate to the actual business relationship; platform settings alone do not establish HIPAA compliance.
-6. Run cross-browser, accessibility, RLS/storage isolation, visual regression, incident-response, and deletion-recovery acceptance checks in the production-like environment.
+1. Pass the documented model/preprocessing parity, determinism, sex-zero-effect, and offline-reference checks across all 81 research recordings.
+2. Pass the Vercel 4 GB memory and latency gates (warm p95 under 25 seconds, cold p95 under 75 seconds, all requests under 120 seconds).
+3. Complete clinical, legal, privacy, security, and applicable regulatory review, including clinician approval of result/report wording.
+4. Receive counsel approval for consent, Privacy, Terms, Accessibility, contact details, and retention/deletion content.
+5. Configure production Supabase redirect URLs, Google OAuth, CAPTCHA, custom SMTP, backups, a private US-region project, and the database-backed screening limit.
+6. Configure separate Vercel web/inference projects and server-only secrets; platform settings alone do not establish HIPAA compliance.
+7. Pass cross-browser, accessibility, RLS/storage isolation, HMAC/replay, PDF, visual-regression, load, incident-response, and deletion-recovery acceptance checks.
 
 SoundCue does not claim HIPAA compliance.

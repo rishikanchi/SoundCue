@@ -4,7 +4,6 @@ import { toScreeningView, type ScreeningRecord } from "@/types/screening";
 import { requireUser } from "../_lib/auth";
 import { CURRENT_CONSENT_VERSION, hasCurrentConsent } from "../_lib/consent";
 import { apiError, apiJson, assertSameOrigin } from "../_lib/http";
-import { consumeRateLimit } from "../_lib/rate-limit";
 import { createScreeningSchema } from "../_lib/schemas";
 
 export async function POST(request: NextRequest) {
@@ -24,14 +23,32 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const rate = consumeRateLimit(`screening:create:${user.id}`, 6, 60 * 60 * 1000);
+  const admin = createAdminClient();
+  const { data: rateRows, error: rateError } = await admin.rpc(
+    "consume_screening_rate_limit",
+    {
+      p_user_id: user.id,
+      p_scope: "screening_create",
+      p_limit: 6,
+      p_window_seconds: 60 * 60,
+    },
+  );
+  const rate = (rateRows as Array<{ allowed: boolean; retry_after_seconds: number }> | null)?.[0];
+  if (rateError || !rate) {
+    return apiError(
+      request,
+      503,
+      "screening_limit_unavailable",
+      "We could not start the screening safely. Please try again.",
+    );
+  }
   if (!rate.allowed) {
     return apiError(
       request,
       429,
       "screening_rate_limited",
       "Please wait before starting another screening.",
-      { "Retry-After": String(rate.retryAfterSeconds) },
+      { "Retry-After": String(rate.retry_after_seconds) },
     );
   }
 
@@ -45,7 +62,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const admin = createAdminClient();
   const { data, error } = await admin
     .from("screenings")
     .insert({
@@ -54,6 +70,7 @@ export async function POST(request: NextRequest) {
       duration_seconds: parsed.data.durationSeconds,
       recording_mime_type: parsed.data.mimeType,
       recording_size_bytes: parsed.data.sizeBytes,
+      age_years: parsed.data.ageYears,
       is_synthetic: false,
     })
     .select("*")

@@ -8,7 +8,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { redirect } from "next/navigation";
 import styles from "./recording-page.module.css";
 
-export const metadata: Metadata = { title: "Record your voice" };
+export const metadata: Metadata = { title: "Parkinson’s voice screening" };
 
 export default async function NewScreeningPage() {
   const configured = isSupabaseConfigured();
@@ -20,9 +20,9 @@ export default async function NewScreeningPage() {
     <AppShell active="new" displayName={getDisplayName(user)}>
       <div className={`page-container ${styles.layout}`}>
         <aside className={styles.guidance}>
-          <h1>Hold a steady “ahhh”.</h1>
+          <h1>Record your Parkinson’s voice screening.</h1>
           <p>
-            Take a comfortable breath, then hold one clear, steady sound for at least 5 seconds.
+            Enter your age, take a comfortable breath, then hold one clear, steady “ahhh” for about 6 seconds.
           </p>
           <div className={styles.rule} />
           <h2>Before you begin:</h2>

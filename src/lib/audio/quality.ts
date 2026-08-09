@@ -1,8 +1,8 @@
 import type { AudioFeatures, AudioQualityIssue, AudioQualityReport } from "./types";
 
 export const MIN_RECORDING_SECONDS = 5;
-export const TARGET_RECORDING_SECONDS = 8;
-export const MAX_RECORDING_SECONDS = 12;
+export const TARGET_RECORDING_SECONDS = 6;
+export const MAX_RECORDING_SECONDS = 7;
 
 export function evaluateAudioQuality(features: AudioFeatures): AudioQualityReport {
   const issues: AudioQualityIssue[] = [];
@@ -21,15 +21,19 @@ export function evaluateAudioQuality(features: AudioFeatures): AudioQualityRepor
       message: "We could not hear a sustained voice clearly.",
       guidance: "Check your microphone, then try again in a quiet room.",
     });
-  } else if (
-    features.rms < 0.015
-    || features.voicedCoverage < 0.55
-    || features.pitchMeanHz === null
-  ) {
+  } else if (features.rms < 0.015 || features.pitchMeanHz === null) {
     issues.push({
       code: "low_input",
       message: "Your voice was a little too quiet or interrupted.",
       guidance: "Move a little closer to the microphone and use a steady, comfortable volume.",
+    });
+  }
+
+  if (features.voicedCoverage >= 0.08 && features.voicedCoverage < 0.55) {
+    issues.push({
+      code: "discontinuity",
+      message: "The sustained sound was interrupted too often.",
+      guidance: "Take a comfortable breath, then hold one continuous “ahhh” until recording stops.",
     });
   }
 

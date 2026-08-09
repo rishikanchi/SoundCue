@@ -15,13 +15,13 @@ const steps = [
   {
     number: "2",
     title: "We analyze the signal",
-    body: "SoundCue examines patterns in your voice that may be associated with vocal impairment.",
+    body: "SoundCue examines voice patterns that research has associated with Parkinson’s disease.",
     icon: AudioLines,
   },
   {
     number: "3",
     title: "Review your result",
-    body: "You’ll see an easy-to-understand summary to support a conversation with your clinician.",
+    body: "You’ll see a Parkinson’s voice screening summary and a clear next step for speaking with a clinician.",
     icon: FileText,
   },
 ];
@@ -33,10 +33,10 @@ export default function Home() {
       <main id="main-content">
         <section className={`page-container ${styles.hero}`}>
           <div className={styles.heroCopy}>
-            <h1 className="page-title">A clearer signal from your voice.</h1>
+            <h1 className="page-title">A clearer signal for Parkinson’s voice screening.</h1>
             <p className={`lead ${styles.heroLead}`}>
-              Record a sustained “ahhh” and SoundCue will look for voice patterns associated
-              with vocal impairment. It takes about one minute.
+              Record a sustained “ahhh” and SoundCue will look for voice patterns that can be
+              associated with Parkinson’s disease. It takes about one minute and cannot diagnose Parkinson’s.
             </p>
             <ConsentForm />
             <p className={styles.privacyNote}>

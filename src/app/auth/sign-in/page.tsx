@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Sign in" };
 export default function SignInPage() {
   return (
     <AuthScreen
-      description="Return to your screenings and continue at your own pace."
+      description="Return to your private Parkinson’s voice screenings, trends, and clinician reports."
       title="Welcome back."
     >
       <SignInForm />

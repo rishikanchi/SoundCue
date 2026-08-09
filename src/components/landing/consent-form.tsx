@@ -23,8 +23,9 @@ export function ConsentForm() {
         />
         <span aria-hidden="true" className="consent-form__box" />
         <span>
-          I understand SoundCue is a screening aid, not a diagnosis, and I consent to my
-          recording being analyzed.
+          I understand SoundCue is a Parkinson’s voice screening aid, not a diagnosis, and I consent to my
+          recording and age at screening being processed by the research model and retained
+          in my private account until I delete them.
         </span>
       </label>
     </form>

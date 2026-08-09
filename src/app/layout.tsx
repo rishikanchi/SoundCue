@@ -14,11 +14,11 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   ),
   title: {
-    default: "SoundCue — A clearer signal from your voice",
+    default: "SoundCue — Parkinson’s voice screening",
     template: "%s · SoundCue",
   },
   description:
-    "A calm, private voice screening aid that helps you notice vocal patterns and prepare for a conversation with a clinician.",
+    "A calm, private Parkinson’s voice screening aid that helps you notice patterns over time and prepare for a conversation with a clinician.",
   robots: { index: false, follow: false },
 };
 

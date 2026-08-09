@@ -1,10 +1,15 @@
 import type { NextRequest } from "next/server";
+import { loadModelEvidence } from "@/features/results/report/model-evidence";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { ScreeningRecord } from "@/types/screening";
 import { getOwnedScreening, requireUser } from "../../../_lib/auth";
 import { apiError } from "../../../_lib/http";
 import { buildClinicianSummaryPdf } from "../../../_lib/pdf";
 import { screeningIdSchema } from "../../../_lib/schemas";
 
 type Context = { params: Promise<{ screeningId: string }> };
+
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest, context: Context) {
   const { user, response } = await requireUser(request);
@@ -18,20 +23,36 @@ export async function GET(request: NextRequest, context: Context) {
   if (!screening) {
     return apiError(request, 404, "screening_not_found", "Screening not found.");
   }
-  if (screening.status !== "completed" || !screening.band) {
+  if (
+    screening.status !== "completed" ||
+    !screening.band ||
+    String(screening.analyzer_kind) !== "research"
+  ) {
     return apiError(
       request,
-      409,
-      "summary_not_ready",
-      "This screening summary is not ready yet.",
+      404,
+      "screening_not_found",
+      "Screening not found.",
     );
   }
 
-  const pdf = buildClinicianSummaryPdf(screening);
-  const pdfBuffer = pdf.buffer.slice(
-    pdf.byteOffset,
-    pdf.byteOffset + pdf.byteLength,
-  ) as ArrayBuffer;
+  const admin = createAdminClient();
+  const [{ data: historyData }, evidence] = await Promise.all([
+    admin
+      .from("screenings")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("status", "completed")
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true }),
+    loadModelEvidence(),
+  ]);
+  const pdf = await buildClinicianSummaryPdf(
+    screening,
+    (historyData ?? []) as ScreeningRecord[],
+    evidence,
+  );
+  const pdfBuffer = pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength) as ArrayBuffer;
   return new Response(pdfBuffer, {
     headers: {
       "Cache-Control": "private, no-store, max-age=0",

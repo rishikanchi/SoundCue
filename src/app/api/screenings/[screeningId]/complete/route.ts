@@ -23,7 +23,7 @@ export async function POST(request: NextRequest, context: Context) {
       request,
       413,
       "recording_too_large",
-      "The recording is larger than the 10 MB limit.",
+      "The recording is larger than the 4 MB limit.",
     );
   }
   const { user, response } = await requireUser(request);

@@ -94,7 +94,7 @@ describe("analyzer release guard", () => {
   it("fails closed with the placeholder analyzer in production", () => {
     vi.stubEnv("VERCEL_ENV", "production");
     vi.stubEnv("ANALYZER_MODE", "dummy");
-    expect(() => getAnalyzer()).toThrow("DUMMY_ANALYZER_DISABLED_IN_PRODUCTION");
+    expect(() => getAnalyzer()).toThrow("RESEARCH_ANALYZER_REQUIRED_IN_PRODUCTION");
   });
 
   it("allows the placeholder analyzer in preview", () => {

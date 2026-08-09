@@ -56,7 +56,7 @@ export function AccountControls({ email, initialSoundCues, preview = false }: Ac
     <div className={styles.settings}>
       {preview ? <div className={styles.previewNote}>Account settings are shown in preview mode. Changes remain only in this browser.</div> : null}
       <section className={styles.card} aria-labelledby="details-title">
-        <div><p className={styles.label}>Account details</p><h2 id="details-title">Your sign-in</h2><p>Used to protect your private screening history.</p></div>
+        <div><p className={styles.label}>Account details</p><h2 id="details-title">Your sign-in</h2><p>Used to protect your private Parkinson’s voice screening history.</p></div>
         <div className={styles.detail}><span>Email</span><strong>{email}</strong></div>
       </section>
 
