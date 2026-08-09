@@ -60,8 +60,8 @@ def test_band_mapping_is_versioned_tertile_mapping() -> None:
 
 def test_encoder_bundle_is_required_before_inference(tmp_path: Path) -> None:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    with pytest.raises(ArtifactError, match="model_cache_unavailable"):
-        EncoderExtractor(manifest, tmp_path / "missing-cache")
+    with pytest.raises(ArtifactError, match="runtime_models_unavailable"):
+        EncoderExtractor(manifest, tmp_path / "missing-models")
 
 
 def test_deployment_approved_hash_is_enforced_before_deserialization() -> None:

@@ -1,8 +1,6 @@
 .model-cache/
 .runtime-models/
+.venv/
 .pytest_cache/
 .ruff_cache/
-__pycache__/
-
-.vercel
-.env*
+**/__pycache__/

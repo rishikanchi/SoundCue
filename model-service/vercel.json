@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "uv run --isolated --no-project --python 3.12 --with huggingface-hub==0.36.0 python scripts/download_encoders.py",
+  "buildCommand": "uv run --isolated --no-project --python 3.12 --with huggingface-hub==0.36.0 --with numpy==2.3.2 --with safetensors==0.6.2 --with torch==2.8.0 --index https://download.pytorch.org/whl/cpu python scripts/download_encoders.py",
   "fluid": true,
   "rewrites": [
     { "source": "/health", "destination": "/api/index" },
@@ -8,8 +8,8 @@
   ],
   "functions": {
     "api/index.py": {
-      "excludeFiles": "{tests/**,requirements-dev.txt,README.md,**/__pycache__/**}",
-      "includeFiles": "{artifacts/**,model_manifest.json,.model-cache/**}",
+      "excludeFiles": "{tests/**,requirements-dev.txt,README.md,.model-cache/**,**/__pycache__/**}",
+      "includeFiles": "{artifacts/**,model_manifest.json,.runtime-models/**,soundcue_inference/vendor_stubs/**}",
       "maxDuration": 120
     }
   }

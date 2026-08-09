@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from functools import lru_cache
-import gc
 import hashlib
 import json
+import logging
+import os
 from pathlib import Path
+import threading
 import time
 from typing import Any
 
@@ -15,6 +17,36 @@ import numpy as np
 
 from .audio import QualityError, TechnicalMetrics, decode_to_mono_8khz, technical_metrics, validate_quality
 from .config import Settings
+from .runtime_compat import install_librosa_stub_fallback
+
+
+# Vercel's function bundle is read-only. Librosa imports Numba lazily, and
+# Numba otherwise tries to place compiled cache files beside its installed
+# modules. Keep every runtime cache in the writable function scratch space and
+# bound native thread pools to the single vCPU available to Standard functions.
+os.environ.setdefault("NUMBA_CACHE_DIR", "/tmp/soundcue-numba")
+os.environ.setdefault("XDG_CACHE_HOME", "/tmp/soundcue-cache")
+os.environ.setdefault("HF_HOME", "/tmp/soundcue-huggingface")
+os.environ.setdefault("TORCH_HOME", "/tmp/soundcue-torch")
+os.environ.setdefault("MPLCONFIGDIR", "/tmp/soundcue-matplotlib")
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
+logger = logging.getLogger("soundcue.inference")
+
+
+@lru_cache(maxsize=1)
+def configure_torch_runtime() -> None:
+    import torch
+
+    torch.set_num_threads(1)
+    try:
+        torch.set_num_interop_threads(1)
+    except RuntimeError:
+        # Another library may have initialized the inter-op pool first. The
+        # OMP/MKL bounds above still keep inference on the allocated vCPU.
+        pass
 
 
 class ArtifactError(RuntimeError):
@@ -42,6 +74,15 @@ def inference_stage_error(stage: str, error: Exception) -> InferenceStageError:
         reason = "memory"
     else:
         reason = "runtime"
+    # Log only the failing runtime stage and exception class/message. The
+    # exception paths here contain dependency/runtime details, never recording
+    # bytes, features, scores, request metadata, or user information.
+    logger.error(
+        "inference_stage_failed stage=%s error_type=%s detail=%s",
+        stage,
+        type(error).__name__,
+        str(error)[:240],
+    )
     return InferenceStageError(f"{stage}_{reason}_failed")
 
 
@@ -83,17 +124,21 @@ def _legacy_level(stability_level: str) -> str:
 
 
 class EncoderExtractor:
-    """Lazily loads the two pinned encoders once per warm process."""
+    """Lazily loads the two purpose-pruned pinned encoders."""
 
-    def __init__(self, manifest: dict[str, Any], cache_dir: Path | None) -> None:
-        if cache_dir is None or not cache_dir.is_dir():
-            raise ArtifactError("model_cache_unavailable")
+    def __init__(self, manifest: dict[str, Any], runtime_model_dir: Path | None) -> None:
+        if runtime_model_dir is None or not runtime_model_dir.is_dir():
+            raise ArtifactError("runtime_models_unavailable")
         self.manifest = manifest
-        self.cache_dir = str(cache_dir)
+        self.ast_dir = runtime_model_dir / "ast"
+        self.wavlm_dir = runtime_model_dir / "wavlm"
+        if not self.ast_dir.is_dir() or not self.wavlm_dir.is_dir():
+            raise ArtifactError("runtime_models_incomplete")
         self._ast_processor = None
         self._ast_model = None
         self._wavlm_processor = None
         self._wavlm_model = None
+        self._inference_lock = threading.Lock()
 
     def _load_ast(self) -> None:
         if self._ast_model is not None:
@@ -101,18 +146,14 @@ class EncoderExtractor:
         import torch
         from transformers import AutoFeatureExtractor, ASTModel
 
-        revisions = self.manifest["model"]["encoderRevisions"]
-        ast = revisions["ast"]
-        # Production inference is fully self-contained. A deployment with a
-        # missing encoder bundle fails closed instead of downloading weights on
-        # a user request.
-        common = {"cache_dir": self.cache_dir, "local_files_only": True}
+        configure_torch_runtime()
+
         if self._ast_processor is None:
             self._ast_processor = AutoFeatureExtractor.from_pretrained(
-                ast["modelId"], revision=ast["revision"], **common
+                self.ast_dir, local_files_only=True
             )
         self._ast_model = ASTModel.from_pretrained(
-            ast["modelId"], revision=ast["revision"], **common
+            self.ast_dir, local_files_only=True
         ).eval()
         torch.set_grad_enabled(False)
 
@@ -122,26 +163,23 @@ class EncoderExtractor:
         import torch
         from transformers import AutoFeatureExtractor, AutoModel
 
-        wavlm = self.manifest["model"]["encoderRevisions"]["wavlm"]
-        common = {"cache_dir": self.cache_dir, "local_files_only": True}
+        configure_torch_runtime()
+
         if self._wavlm_processor is None:
             self._wavlm_processor = AutoFeatureExtractor.from_pretrained(
-                wavlm["modelId"], revision=wavlm["revision"], **common
+                self.wavlm_dir, local_files_only=True
             )
         self._wavlm_model = AutoModel.from_pretrained(
-            wavlm["modelId"], revision=wavlm["revision"], **common
+            self.wavlm_dir, local_files_only=True
         ).eval()
         torch.set_grad_enabled(False)
 
-    def _release_ast(self) -> None:
-        self._ast_model = None
-        gc.collect()
-
-    def _release_wavlm(self) -> None:
-        self._wavlm_model = None
-        gc.collect()
-
     def extract(self, waveform_8khz: np.ndarray) -> dict[str, np.ndarray]:
+        with self._inference_lock:
+            return self._extract_unlocked(waveform_8khz)
+
+    def _extract_unlocked(self, waveform_8khz: np.ndarray) -> dict[str, np.ndarray]:
+        install_librosa_stub_fallback()
         try:
             import librosa
             import torch
@@ -164,11 +202,20 @@ class EncoderExtractor:
                 [waveform], sampling_rate=16000, padding="max_length", return_tensors="pt"
             )
             with torch.inference_mode():
-                ast_output = self._ast_model(
-                    input_values=ast_inputs["input_values"], output_hidden_states=True
+                hidden_states = self._ast_model.embeddings(ast_inputs["input_values"])
+                head_mask = self._ast_model.get_head_mask(
+                    None, self._ast_model.config.num_hidden_layers
                 )
-            ast_l3 = ast_output.hidden_states[3][0, 1].float().cpu().numpy().copy()
-            hidden_l6 = ast_output.hidden_states[6][0].float()
+                ast_l3_tensor = None
+                for index, layer in enumerate(self._ast_model.encoder.layer):
+                    layer_head_mask = head_mask[index] if head_mask is not None else None
+                    hidden_states = layer(hidden_states, layer_head_mask)
+                    if index == 2:
+                        ast_l3_tensor = hidden_states[0, 1].float()
+                if ast_l3_tensor is None or len(self._ast_model.encoder.layer) != 6:
+                    raise ArtifactError("ast_runtime_depth_mismatch")
+            ast_l3 = ast_l3_tensor.cpu().numpy().copy()
+            hidden_l6 = hidden_states[0].float()
             ast_l6 = torch.cat(
                 [
                     hidden_l6.mean(dim=0),
@@ -179,8 +226,6 @@ class EncoderExtractor:
             ).cpu().numpy().copy()
         except Exception as exc:
             raise inference_stage_error("ast_inference", exc) from exc
-        finally:
-            self._release_ast()
 
         try:
             self._load_wavlm()
@@ -206,6 +251,8 @@ class EncoderExtractor:
             frame_length = int(
                 self._wavlm_model._get_feat_extract_output_lengths(attention_mask.sum(dim=1))[0]
             )
+            if len(self._wavlm_model.encoder.layers) != 1:
+                raise ArtifactError("wavlm_runtime_depth_mismatch")
             wavlm_l1 = (
                 wavlm_output.hidden_states[1][0, :frame_length]
                 .float()
@@ -216,8 +263,6 @@ class EncoderExtractor:
             )
         except Exception as exc:
             raise inference_stage_error("wavlm_inference", exc) from exc
-        finally:
-            self._release_wavlm()
         try:
             return {
                 "ast_layer_3": ast_l3.astype(np.float64),
@@ -245,7 +290,9 @@ class ResearchAnalyzer:
             name for component in self.bundle["components"] for name in component["feature_names"]
         }:
             raise ArtifactError("sex_input_present")
-        self.extractor = extractor or EncoderExtractor(self.manifest, settings.model_cache_dir)
+        self.extractor = extractor or EncoderExtractor(
+            self.manifest, settings.runtime_model_dir
+        )
 
     def _component_scores(self, age: int, features: dict[str, np.ndarray]) -> list[dict]:
         thresholds = self.manifest["bandPolicy"]["thresholds"]
