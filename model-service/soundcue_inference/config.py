@@ -16,7 +16,7 @@ class Settings:
     expected_artifact_sha256: str
     manifest_path: Path = SERVICE_ROOT / "model_manifest.json"
     artifact_path: Path = SERVICE_ROOT / "artifacts" / "research_ensemble.joblib"
-    model_cache_dir: Path | None = None
+    runtime_model_dir: Path | None = None
     max_audio_bytes: int = 4 * 1024 * 1024
     signature_ttl_seconds: int = 300
 
@@ -28,8 +28,8 @@ class Settings:
         expected_hash = os.environ.get("SOUNDCUE_EXPECTED_MODEL_SHA256", "").lower()
         if len(expected_hash) != 64 or any(character not in "0123456789abcdef" for character in expected_hash):
             raise RuntimeError("SOUNDCUE_EXPECTED_MODEL_SHA256 must be a lowercase SHA-256")
-        bundled_cache = SERVICE_ROOT / ".model-cache"
-        cache = os.environ.get("SOUNDCUE_MODEL_CACHE_DIR")
+        bundled_models = SERVICE_ROOT / ".runtime-models"
+        model_dir = os.environ.get("SOUNDCUE_RUNTIME_MODEL_DIR")
         return cls(
             hmac_secret=secret,
             expected_artifact_sha256=expected_hash,
@@ -44,7 +44,11 @@ class Settings:
                     SERVICE_ROOT / "artifacts" / "research_ensemble.joblib",
                 )
             ),
-            model_cache_dir=Path(cache) if cache else bundled_cache if bundled_cache.exists() else None,
+            runtime_model_dir=(
+                Path(model_dir)
+                if model_dir
+                else bundled_models if bundled_models.exists() else None
+            ),
             max_audio_bytes=int(
                 os.environ.get("SOUNDCUE_MAX_AUDIO_BYTES", str(4 * 1024 * 1024))
             ),

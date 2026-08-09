@@ -95,7 +95,7 @@ The inference service has its own Python dependencies, tests, Vercel configurati
 Do not enable public signup or public screening results until all of the following are complete:
 
 1. Pass the documented model/preprocessing parity, determinism, sex-zero-effect, and offline-reference checks across all 81 research recordings.
-2. Pass the Vercel 4 GB memory and latency gates (warm p95 under 25 seconds, cold p95 under 75 seconds, all requests under 120 seconds).
+2. Pass the Vercel memory and latency gates on the configured instance (warm p95 under 25 seconds, cold p95 under 75 seconds, all requests under 120 seconds).
 3. Complete clinical, legal, privacy, security, and applicable regulatory review, including clinician approval of result/report wording.
 4. Receive counsel approval for consent, Privacy, Terms, Accessibility, contact details, and retention/deletion content.
 5. Configure production Supabase redirect URLs, Google OAuth, CAPTCHA, custom SMTP, backups, a private US-region project, and the database-backed screening limit.

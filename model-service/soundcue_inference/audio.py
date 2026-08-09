@@ -7,6 +7,8 @@ import subprocess
 
 import numpy as np
 
+from .runtime_compat import install_librosa_stub_fallback
+
 
 ALLOWED_MIME_BASE_TYPES = frozenset(
     {
@@ -146,6 +148,7 @@ def technical_metrics(waveform: np.ndarray, sample_rate: int = 8000) -> Technica
 
     pitch_iqr: float | None = None
     try:
+        install_librosa_stub_fallback()
         import librosa
 
         f0, voiced_flag, _ = librosa.pyin(
