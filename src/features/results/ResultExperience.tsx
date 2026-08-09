@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -29,14 +29,31 @@ type ResultExperienceProps = {
 
 const BAND_POSITION: Record<RiskBand, number> = { fewer: 18, some: 55, more: 84 };
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(value));
+const DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+};
+
+function LocalScreeningDate({ value }: { value: string }) {
+  const id = useId();
+  const formatted = new Intl.DateTimeFormat("en-US", DATE_FORMAT_OPTIONS).format(
+    new Date(value),
+  );
+  const script = `{var n=document.getElementById(${JSON.stringify(id)});if(n)n.textContent=new Intl.DateTimeFormat("en-US",${JSON.stringify(DATE_FORMAT_OPTIONS)}).format(new Date(${JSON.stringify(value)}))}`;
+
+  return (
+    <>
+      <time id={id} dateTime={value} suppressHydrationWarning>{formatted}</time>
+      <script
+        type={typeof window === "undefined" ? "text/javascript" : "text/plain"}
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: script }}
+      />
+    </>
+  );
 }
 
 export function ResultExperience({ initialScreening, preview = false }: ResultExperienceProps) {
@@ -98,7 +115,10 @@ export function ResultExperience({ initialScreening, preview = false }: ResultEx
     <article className={`${styles.result} page-container`}>
       <header className={styles.heading}>
         <h1>Your Parkinson’s voice screening result.</h1>
-        <p className={styles.date}><CalendarDays aria-hidden="true" size={20} /> {formatDate(screening.completed_at ?? screening.created_at)}</p>
+        <p className={styles.date}>
+          <CalendarDays aria-hidden="true" size={20} />
+          <LocalScreeningDate value={screening.completed_at ?? screening.created_at} />
+        </p>
       </header>
 
       <section className={styles.overview} aria-labelledby="result-title">
