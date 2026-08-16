@@ -6,6 +6,18 @@ This repository contains the complete research-screening product surface: versio
 
 The deployed analyzer is a three-component age-plus-audio research model: AST layer 3 (40%), AST layer 6 (40%), and WavLM layer 1 (20%). It is not independently validated or diagnostic. Production fails closed unless `ANALYZER_MODE=research`; it never falls back to the retained local-only `DummySignalAnalyzer`. Do not claim the unavailable four-component model's 0.9872 result for this service.
 
+## Repository contents
+
+| Requirement | Location |
+| --- | --- |
+| Source code | [`src/`](src/), [`model-service/`](model-service/), [`supabase/`](supabase/), and [`scripts/`](scripts/) |
+| Project README | This file |
+| Setup instructions | [Detailed setup guide](docs/SETUP.md) |
+| Architecture diagram | [Architecture and trust boundaries](docs/ARCHITECTURE.md) |
+| How it works | [End-to-end technical explanation](docs/HOW_IT_WORKS.md) |
+
+The source tree is organized by responsibility: the Next.js application lives in `src/`, database migrations and policy tests live in `supabase/`, the private Python inference service lives in `model-service/`, and browser end-to-end tests live in `tests/`.
+
 ## Stack
 
 - Next.js App Router, React, TypeScript, CSS modules
@@ -16,23 +28,34 @@ The deployed analyzer is a three-component age-plus-audio research model: AST la
 - Zod at API boundaries
 - Vitest, pgTAP, Playwright, and axe for verification
 
-## Local setup
+## Setup instructions
 
-Requirements: Node.js 20+, Docker, and the Supabase CLI.
+For a UI-only preview, Node.js 20.9 or newer is sufficient:
 
 ```bash
-npm install
-npm run supabase:start
-npm run supabase:reset
+npm ci
+npm run dev
 ```
 
-Copy `.env.example` to `.env.local`, then fill the values printed by `supabase status -o env`. Use the local publishable key for `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and the legacy local service-role JWT for `SUPABASE_SERVICE_ROLE_KEY`.
+Open `http://localhost:3000`. With no Supabase environment variables, the app deliberately uses a non-persistent preview flow.
+
+For accounts, persistence, private recording storage, and API lifecycle testing, Docker and the Supabase CLI are also required:
+
+```bash
+npm run supabase:start
+npm run supabase:reset
+cp .env.example .env.local
+```
+
+Fill `.env.local` with the values printed by `npx supabase status -o env`. Use the local publishable key for `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and the local service-role JWT for `SUPABASE_SERVICE_ROLE_KEY`. Set `ANALYZER_MODE=dummy` for the lightweight local analyzer, or configure the separate Python service before using `ANALYZER_MODE=research`.
 
 ```bash
 npm run dev
 ```
 
 The app runs at `http://localhost:3000`; Supabase Studio runs at `http://127.0.0.1:54323`, and local email is visible at `http://127.0.0.1:54324`.
+
+See the [complete setup guide](docs/SETUP.md) for prerequisites, every environment variable, research-service setup, demo data, verification, and troubleshooting.
 
 Google OAuth is rendered only when `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` and the corresponding Supabase provider credentials are configured. Hosted demos without those third-party credentials use the complete email/password flow without exposing an inert OAuth control.
 
@@ -44,10 +67,10 @@ The demo seed is explicit and hard-blocked in production. It creates one account
 SOUNDCUE_ALLOW_DEMO_SEED=true \
 SOUNDCUE_DEMO_EMAIL=demo@example.test \
 SOUNDCUE_DEMO_PASSWORD='choose-a-local-password' \
-npm run seed:demo
+npx tsx --env-file=.env.local scripts/seed-demo.ts
 ```
 
-No demo credentials are committed. Normal accounts always start with empty history.
+No hosted demo credentials are committed; the credentials referenced by automated tests are local-only fixtures. Normal accounts always start with empty history.
 
 ## Verification
 
@@ -77,6 +100,26 @@ interface Analyzer {
 `ResearchModelAnalyzer` signs raw-audio requests to the separate `model-service/` project. Configure `SOUNDCUE_INFERENCE_URL`, a shared `SOUNDCUE_INFERENCE_HMAC_SECRET`, and the exact `SOUNDCUE_MODEL_ARTIFACT_SHA256`. The service verifies the bundled artifact before loading it, rejects stale/tampered/replayed requests, standardizes audio to the research acquisition bandwidth, and returns a versioned result. The UI never exposes an individual score, component score, or probability.
 
 The inference service has its own Python dependencies, tests, Vercel configuration, versioned manifest, and artifact builder. See `model-service/README.md` for local and deployment commands.
+
+## Architecture
+
+SoundCue is split across three trust zones: the browser captures and reviews audio, the Next.js server authenticates and owns screening lifecycle mutations, and the private inference service performs model work behind an HMAC-authenticated server-to-server boundary. Supabase provides authentication, Postgres/RLS, and private object storage.
+
+The full [architecture diagram](docs/ARCHITECTURE.md) identifies deployment units, data stores, trust boundaries, and the public versus service-role-only result fields.
+
+## How it works
+
+At a high level, a screening follows this path:
+
+1. The user accepts the current consent document and authenticates.
+2. The browser records a five-to-seven-second sustained vowel, extracts local quality features, and permits upload only after the local checks pass.
+3. Authenticated Route Handlers create the screening row and save the audio to private Supabase Storage.
+4. The analysis handler atomically claims the screening, downloads the retained audio, and calls the configured analyzer.
+5. In research mode, the web server hashes and HMAC-signs the raw audio request. The Python service verifies it, standardizes and quality-checks the recording, extracts three frozen encoder views, combines each with age, and returns a versioned categorical result.
+6. Numerical model outputs are stored in a service-role-only table. The user-facing screening record contains the category, reviewed observations, provenance versions, and no research score.
+7. Results, history, playback, deletion, and clinician PDFs are served only after authentication and ownership checks.
+
+Read [How SoundCue works](docs/HOW_IT_WORKS.md) for the request sequence, state machine, inference pipeline, result shaping, failure handling, and deletion behavior.
 
 ## Data and privacy behavior
 
